@@ -23,17 +23,24 @@ def _parse_function(filename):
 
 dataset = dataset.map(_parse_function)
 
+data_root1 = pathlib.Path('C:\\MLProjects\\emptyYOBA')
+filenames1 = list(data_root1.glob('*/*'))
+filenames1 = [str(path) for path in filenames1]
+filenames1 = filenames1*1000
+dataset1 = tf.data.Dataset.from_tensor_slices((filenames1))
+dataset1 = dataset1.map(_parse_function)
+
 # Training Parameters
 learning_rate = 0.01
-num_steps = 3000
-batch_size = 25
+num_steps = 1000
+batch_size = 250
 
 display_step = 100
 examples_to_show = 10
 
 # Network Parameters
-num_hidden_1 = 256 # 1st layer num features
-num_hidden_2 = 128 # 2nd layer num features (the latent dim)
+num_hidden_1 = 6000 # 1st layer num features
+num_hidden_2 = 3000 # 2nd layer num features (the latent dim)
 num_input = 10000 # YOBA data input (img shape: 100*100)
 
 # tf Graph input (only pictures)
@@ -85,6 +92,10 @@ iterator = dataset.make_one_shot_iterator()
 
 imagesdata = iterator.get_next()
 
+dataset1= dataset1.batch(batch_size)
+iterator1 = dataset1.make_one_shot_iterator()
+imagesdata1 = iterator1.get_next()
+
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
@@ -118,7 +129,7 @@ with tf.Session() as sess:
     canvas_recon = np.empty((100 * n, 100 * n))
     for i in range(n):
         # YOBA test set
-        batch_x = sess.run(imagesdata)
+        batch_x = sess.run(imagesdata1)
         # Encode and decode the digit image
         g = sess.run(decoder_op, feed_dict={x_pl: batch_x})
 
