@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pathlib
 
-data_root = pathlib.Path('C:\\MLProjects\\circle')
+data_root = pathlib.Path('C:\\MLProjects\\YOBA')
 filenames = list(data_root.glob('*/*'))
 filenames = [str(path) for path in filenames]
 filenames = filenames*1000
@@ -32,8 +32,8 @@ dataset1 = dataset1.map(_parse_function)
 
 # Training Parameters
 learning_rate = 0.01
-num_steps = 6000
-batch_size = 100
+num_steps = 5000
+batch_size = 150
 display_step = 100
 
 # Network Parameters
@@ -43,18 +43,18 @@ rho = 0.01
 beta = 1.0
 
 #переменные для весов свертки и свободных членов:
-ae_weights = {'conv1': tf.Variable(tf.truncated_normal([5, 5, 1, 4], stddev=0.1)),
-              'b_conv1': tf.Variable(tf.truncated_normal([4], stddev=0.1)),
-              'conv2': tf.Variable(tf.truncated_normal([5, 5, 4, 16], stddev=0.1)),
-              'b_hidden': tf.Variable(tf.truncated_normal([16], stddev=0.1)),
-              "conv3": tf.Variable(tf.truncated_normal([5, 5, 16, 64], stddev=0.1)),
-              "b_hidden3": tf.Variable(tf.truncated_normal([64], stddev=0.1)),
-              "deconv0": tf.Variable(tf.truncated_normal([5, 5, 16, 64], stddev=0.1)),
-              "b_deconv0": tf.Variable(tf.truncated_normal([16], stddev=0.1)),
-              'deconv1': tf.Variable(tf.truncated_normal([5, 5, 4, 16], stddev=0.1)),
-              'b_deconv': tf.Variable(tf.truncated_normal([4], stddev=0.1)),
-              'deconv2': tf.Variable(tf.truncated_normal([5, 5, 1, 4], stddev=0.1)),
-              'b_visible': tf.Variable(tf.truncated_normal([1], stddev=0.1))}
+ae_weights = {'encod1': tf.Variable(tf.truncated_normal([2, 2, 1, 4], stddev=0.1)),
+              'b_encod1': tf.Variable(tf.truncated_normal([4], stddev=0.1)),
+              'encod2': tf.Variable(tf.truncated_normal([25, 25, 4, 16], stddev=0.1)),
+              'b_encod2': tf.Variable(tf.truncated_normal([16], stddev=0.1)),
+              "encod3": tf.Variable(tf.truncated_normal([50, 50, 16, 64], stddev=0.1)),
+              "b_encod3": tf.Variable(tf.truncated_normal([64], stddev=0.1)),
+              "decod3": tf.Variable(tf.truncated_normal([50, 50, 16, 64], stddev=0.1)),
+              "b_decod3": tf.Variable(tf.truncated_normal([16], stddev=0.1)),
+              'decod2': tf.Variable(tf.truncated_normal([25, 25, 4, 16], stddev=0.1)),
+              'b_decod2': tf.Variable(tf.truncated_normal([4], stddev=0.1)),
+              'decod1': tf.Variable(tf.truncated_normal([2, 2, 1, 4], stddev=0.1)),
+              'b_decod1': tf.Variable(tf.truncated_normal([1], stddev=0.1))}
 
 input_shape = tf.stack([batch_size, 100, 100, 1])
 h1_shape = tf.stack([batch_size, 50, 50, 4])
@@ -66,27 +66,23 @@ x_image = tf.reshape(x_pl, [-1, 100, 100, 1])
 
 # Building the encoder
 def encoder(x):
-    #создание сверточного слоя (применяет сверточные фильтры):
-    conv1_logits = tf.nn.conv2d(x, ae_weights['conv1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_conv1']
-    conv1 = tf.nn.relu(conv1_logits)
-    #создание сверточного слоя (применяет сверточные фильтры):
-    hidden_logits = tf.nn.conv2d(conv1, ae_weights['conv2'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_hidden']
-    hidden = tf.nn.relu(hidden_logits)
-    hidden_logits3 = tf.nn.conv2d(hidden, ae_weights["conv3"], strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_hidden3"]
-    hidden3 = tf.nn.relu(hidden_logits3)
-    return hidden3
+    encod_h1_logits = tf.nn.conv2d(x, ae_weights['encod1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod1']
+    encod1 = tf.nn.relu(encod_h1_logits)
+    encod_h2_logits = tf.nn.conv2d(encod1, ae_weights['encod2'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod2']
+    encod2 = tf.nn.relu(encod_h2_logits)
+    encod_h3_logits = tf.nn.conv2d(encod2, ae_weights["encod3"], strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_encod3"]
+    encod3 = tf.nn.relu(encod_h3_logits)
+    return encod3
 
 # Building the decoder
 def decoder(x):
-    deconv_h1_logits0 = tf.nn.conv2d_transpose(x, ae_weights["deconv0"], h2_shape, strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_deconv0"]
-    deconv_h10 = tf.nn.relu(deconv_h1_logits0)
-    #создание сверточного слоя (применяет сверточные фильтры):
-    deconv_logits = tf.nn.conv2d_transpose(deconv_h10, ae_weights['deconv1'], h1_shape, strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_deconv']
-    deconv = tf.nn.relu(deconv_logits)
-    #создание сверточного слоя (применяет сверточные фильтры):
-    visible_logits = tf.nn.conv2d_transpose(deconv, ae_weights['deconv2'], input_shape, strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_visible']
-    visible = tf.nn.relu(visible_logits)
-    return visible
+    decod_h3_logits = tf.nn.conv2d_transpose(x, ae_weights["decod3"], h2_shape, strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_decod3"]
+    decod3 = tf.nn.relu(decod_h3_logits)
+    decod_h2_logits = tf.nn.conv2d_transpose(decod3, ae_weights['decod2'], h1_shape, strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_decod2']
+    decod2 = tf.nn.relu(decod_h2_logits)
+    decod_h1_logits = tf.nn.conv2d_transpose(decod2, ae_weights['decod1'], input_shape, strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_decod1']
+    decod1 = tf.nn.relu(decod_h1_logits)
+    return decod1
 
 # Construct model
 encoder_op = encoder(x_image)
