@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pathlib
 
-data_root = pathlib.Path('C:\\MLProjects\\YOBA')
+data_root = pathlib.Path('C:\\MLProjects\\circle')
 filenames = list(data_root.glob('*/*'))
 filenames = [str(path) for path in filenames]
 filenames = filenames*1000
@@ -23,14 +23,21 @@ def _parse_function(filename):
 
 dataset = dataset.map(_parse_function)
 
+data_root1 = pathlib.Path('C:\\MLProjects\\emptyYOBA')
+filenames1 = list(data_root1.glob('*/*'))
+filenames1 = [str(path) for path in filenames1]
+filenames1 = filenames1*1000
+dataset1 = tf.data.Dataset.from_tensor_slices((filenames1))
+dataset1 = dataset1.map(_parse_function)
+
 # Training Parameters
 learning_rate = 0.01
-num_steps = 1000
+num_steps = 6000
 batch_size = 100
 display_step = 100
 
 # Network Parameters
-#num_input = 10000
+num_input = 10000
 
 rho = 0.01
 beta = 1.0
@@ -53,14 +60,14 @@ input_shape = tf.stack([batch_size, 100, 100, 1])
 h1_shape = tf.stack([batch_size, 50, 50, 4])
 h2_shape = tf.stack([batch_size, 25, 25, 16])
 
-#x_pl = tf.placeholder(tf.float32, [batch_size, num_input])
-x_pl = tf.placeholder(tf.float32, [batch_size, 100, 100, 1])
-#images = tf.reshape(x_pl, [-1, 100, 100, 1])
+x_pl = tf.placeholder(tf.float32, [batch_size, num_input])
+#x_pl = tf.placeholder(tf.float32, [batch_size, 100, 100, 1])
+x_image = tf.reshape(x_pl, [-1, 100, 100, 1])
 
 # Building the encoder
 def encoder(x):
     #создание сверточного слоя (применяет сверточные фильтры):
-    conv1_logits = tf.nn.conv2d(x_pl, ae_weights['conv1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_conv1']
+    conv1_logits = tf.nn.conv2d(x, ae_weights['conv1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_conv1']
     conv1 = tf.nn.relu(conv1_logits)
     #создание сверточного слоя (применяет сверточные фильтры):
     hidden_logits = tf.nn.conv2d(conv1, ae_weights['conv2'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_hidden']
@@ -71,7 +78,7 @@ def encoder(x):
 
 # Building the decoder
 def decoder(x):
-    deconv_h1_logits0 = tf.nn.conv2d_transpose(hidden3, ae_weights["deconv0"], h2_shape, strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_deconv0"]
+    deconv_h1_logits0 = tf.nn.conv2d_transpose(x, ae_weights["deconv0"], h2_shape, strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_deconv0"]
     deconv_h10 = tf.nn.relu(deconv_h1_logits0)
     #создание сверточного слоя (применяет сверточные фильтры):
     deconv_logits = tf.nn.conv2d_transpose(deconv_h10, ae_weights['deconv1'], h1_shape, strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_deconv']
@@ -82,13 +89,13 @@ def decoder(x):
     return visible
 
 # Construct model
-encoder_op = encoder(x_pl)
+encoder_op = encoder(x_image)
 decoder_op = decoder(encoder_op)
 
 # Prediction
 y_pred = decoder_op
 # Targets (Labels) are the input data.
-y_true = x_pl
+y_true = x_image
 
 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred))
 
@@ -103,6 +110,11 @@ optimizer = tf.train.AdagradOptimizer(learning_rate).minimize(loss)
 dataset = dataset.batch(batch_size)
 iterator = dataset.make_one_shot_iterator()
 imagesdata = iterator.get_next()
+
+dataset1= dataset1.batch(batch_size)
+# step 4: create iterator and final input tensor
+iterator1 = dataset1.make_one_shot_iterator()
+imagesdata1 = iterator1.get_next()
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -135,7 +147,7 @@ with tf.Session() as sess:
     canvas_recon = np.empty((100 * n, 100 * n))
     for i in range(n):
         # image test set
-        batch_x = sess.run(imagesdata)
+        batch_x = sess.run(imagesdata1)
         # Encode and decode the image
         g = sess.run(decoder_op, feed_dict={x_pl: batch_x})
 
