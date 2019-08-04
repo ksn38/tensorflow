@@ -43,8 +43,8 @@ rho = 0.01
 beta = 1.0
 
 #переменные для весов свертки и свободных членов:
-ae_weights = {'encod0': tf.Variable(tf.truncated_normal([1, 1, 1, 1], stddev=0.1)),
-              'b_encod0': tf.Variable(tf.truncated_normal([1], stddev=0.1)),
+ae_weights = {#'encod0': tf.Variable(tf.truncated_normal([1, 1, 1, 1], stddev=0.1)),
+              #'b_encod0': tf.Variable(tf.truncated_normal([1], stddev=0.1)),
               'encod1': tf.Variable(tf.truncated_normal([5, 5, 1, 4], stddev=0.1)),
               'b_encod1': tf.Variable(tf.truncated_normal([4], stddev=0.1)),
               "encod2": tf.Variable(tf.truncated_normal([25, 25, 4, 16], stddev=0.1)),
@@ -80,9 +80,9 @@ x_image = tf.reshape(x_pl, [-1, 100, 100, 1])
 # Building the encoder
 def encoder(x):
     #создание сверточного слоя (применяет сверточные фильтры):
-    encod_h0_logits = tf.nn.conv2d(x, ae_weights['encod0'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod0']
-    encod = tf.nn.relu(encod_h0_logits)
-    encod_h1_logits = tf.nn.conv2d(encod, ae_weights['encod1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod1']
+    #encod_h0_logits = tf.nn.conv2d(x, ae_weights['encod0'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod0']
+    #encod = tf.nn.relu(encod_h0_logits)
+    encod_h1_logits = tf.nn.conv2d(x, ae_weights['encod1'], strides=[1, 2, 2, 1], padding='SAME') + ae_weights['b_encod1']
     encod1 = tf.nn.relu(encod_h1_logits)
     encod_h2_logits = tf.nn.conv2d(encod1, ae_weights["encod2"], strides=[1, 2, 2, 1], padding="SAME") + ae_weights["b_encod2"]
     encod2 = tf.nn.relu(encod_h2_logits)
