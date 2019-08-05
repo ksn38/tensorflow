@@ -5,14 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pathlib
 
-data_root = pathlib.Path('C:\\MLProjects\\YOBA')
-filenames = list(data_root.glob('*/*'))
-filenames = [str(path) for path in filenames]
-filenames = filenames*1000
-
-dataset = tf.data.Dataset.from_tensor_slices((filenames))
-
-# step 3: parse every image in the dataset using `map`
+#Parse every image in the dataset using `map`
 def _parse_function(filename):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, channels=1)
@@ -21,9 +14,14 @@ def _parse_function(filename):
     image /= 255.0
     return image
 
+data_root = pathlib.Path('C:\\MLProjects\\YOBA')
+filenames = list(data_root.glob('*/*'))
+filenames = [str(path) for path in filenames]
+filenames = filenames*1000
+dataset = tf.data.Dataset.from_tensor_slices((filenames))
 dataset = dataset.map(_parse_function)
 
-data_root1 = pathlib.Path('C:\\MLProjects\\emptyYOBA')
+data_root1 = pathlib.Path('C:\\MLProjects\\wemptyYOBA')
 filenames1 = list(data_root1.glob('*/*'))
 filenames1 = [str(path) for path in filenames1]
 filenames1 = filenames1*1000
@@ -33,14 +31,11 @@ dataset1 = dataset1.map(_parse_function)
 # Training Parameters
 learning_rate = 0.01
 num_steps = 5000
-batch_size = 150
+batch_size = 64
 display_step = 100
 
 # Network Parameters
 num_input = 10000
-
-rho = 0.01
-beta = 1.0
 
 #переменные для весов свертки и свободных членов:
 ae_weights = {'encod1': tf.Variable(tf.truncated_normal([2, 2, 1, 4], stddev=0.1)),
@@ -61,7 +56,6 @@ h1_shape = tf.stack([batch_size, 50, 50, 4])
 h2_shape = tf.stack([batch_size, 25, 25, 16])
 
 x_pl = tf.placeholder(tf.float32, [batch_size, num_input])
-#x_pl = tf.placeholder(tf.float32, [batch_size, 100, 100, 1])
 x_image = tf.reshape(x_pl, [-1, 100, 100, 1])
 
 # Building the encoder
@@ -94,13 +88,6 @@ y_pred = decoder_op
 y_true = x_image
 
 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred))
-
-#Определим теперь тензор для регуляризационного слагаемого:
-#data_rho = tf.reduce_mean(hidden, 0)
-#reg_cost = - tf.reduce_mean(tf.log(data_rho/rho) * rho + tf.log((1-data_rho)/(1-rho)) * (1-rho))
-
-#total_cost = loss + beta * reg_cost
-
 optimizer = tf.train.AdagradOptimizer(learning_rate).minimize(loss)
 
 dataset = dataset.batch(batch_size)
@@ -108,7 +95,6 @@ iterator = dataset.make_one_shot_iterator()
 imagesdata = iterator.get_next()
 
 dataset1= dataset1.batch(batch_size)
-# step 4: create iterator and final input tensor
 iterator1 = dataset1.make_one_shot_iterator()
 imagesdata1 = iterator1.get_next()
 
@@ -126,7 +112,7 @@ with tf.Session() as sess:
     # Training
     for i in range(1, num_steps+1):
         # Prepare Data
-        # Get the next batch of MNIST data (only images are needed, not labels)
+        # Get the next batch of image data (only images are needed, not labels)
         batch_x = sess.run(imagesdata)
 
         # Run optimization op (backprop) and cost op (to get loss value)
