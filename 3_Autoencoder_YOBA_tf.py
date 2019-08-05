@@ -21,7 +21,7 @@ filenames = filenames*1000
 dataset = tf.data.Dataset.from_tensor_slices((filenames))
 dataset = dataset.map(_parse_function)
 
-data_root1 = pathlib.Path('C:\\MLProjects\\wemptyYOBA')
+data_root1 = pathlib.Path('C:\\MLProjects\\emptyYOBA2')
 filenames1 = list(data_root1.glob('*/*'))
 filenames1 = [str(path) for path in filenames1]
 filenames1 = filenames1*1000
