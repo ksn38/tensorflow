@@ -5,13 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pathlib
 
-data_root = pathlib.Path('C:\\MLProjects\\YOBA')
-filenames = list(data_root.glob('*/*'))
-filenames = [str(path) for path in filenames]
-filenames = filenames*1000
-
-dataset = tf.data.Dataset.from_tensor_slices((filenames))
-
 # Parse every image in the dataset using `map`
 def _parse_function(filename):
     image_string = tf.read_file(filename)
@@ -21,9 +14,14 @@ def _parse_function(filename):
     image /= 255.0
     return image
 
+data_root = pathlib.Path('C:\\MLProjects\\YOBA')
+filenames = list(data_root.glob('*/*'))
+filenames = [str(path) for path in filenames]
+filenames = filenames*1000
+dataset = tf.data.Dataset.from_tensor_slices((filenames))
 dataset = dataset.map(_parse_function)
 
-data_root1 = pathlib.Path('C:\\MLProjects\\emptyYOBA')
+data_root1 = pathlib.Path('C:\\MLProjects\\wemptyYOBA')
 filenames1 = list(data_root1.glob('*/*'))
 filenames1 = [str(path) for path in filenames1]
 filenames1 = filenames1*1000
@@ -32,8 +30,8 @@ dataset1 = dataset1.map(_parse_function)
 
 # Training Parameters
 learning_rate = 0.01
-num_steps = 1000
-batch_size = 250
+num_steps = 5000
+batch_size = 64
 
 display_step = 100
 examples_to_show = 10
@@ -85,11 +83,9 @@ y_true = x_pl
 loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
 optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 
-dataset = dataset.batch(batch_size)
-
 # Create iterator and final input tensor
+dataset = dataset.batch(batch_size)
 iterator = dataset.make_one_shot_iterator()
-
 imagesdata = iterator.get_next()
 
 dataset1= dataset1.batch(batch_size)
@@ -111,7 +107,7 @@ with tf.Session() as sess:
     # Training
     for i in range(1, num_steps+1):
         # Prepare Data
-        # Get the next batch of YOBA data (only images are needed, not labels)
+        # Get the next batch of image data (only images are needed, not labels)
         batch_x = sess.run(imagesdata)
 
         # Run optimization op (backprop) and cost op (to get loss value)
@@ -130,7 +126,7 @@ with tf.Session() as sess:
     for i in range(n):
         # YOBA test set
         batch_x = sess.run(imagesdata1)
-        # Encode and decode the digit image
+        # Encode and decode the image
         g = sess.run(decoder_op, feed_dict={x_pl: batch_x})
 
         # Display original images
